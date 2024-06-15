@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "867766227715",
+    "project_id": "onlyucafe-ade4f",
+    "storage_bucket": "onlyucafe-ade4f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:867766227715:android:51297420c77e65cd1b8f36",
+        "android_client_info": {
+          "package_name": "com.example.onlyu_cafe"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "867766227715-vjbdo88qag7buk40ei0uhntgd63b3ual.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.onlyu_cafe",
+            "certificate_hash": "ad0a7400cbc9ed3eaf1f5da358ba5d518338778a"
+          }
+        },
+        {
+          "client_id": "867766227715-5inb34g2b3okdcmagl7o86pthjnmj6dh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANwokXGOsnAL8KVPXNp1HnCaAQalhIR28"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "867766227715-5inb34g2b3okdcmagl7o86pthjnmj6dh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "867766227715-hkhf7ehkcnrtpc6tolc1bcsssvbovd7r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.onlyuCafe"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
