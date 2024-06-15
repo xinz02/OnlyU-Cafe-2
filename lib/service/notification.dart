@@ -164,7 +164,23 @@ class NotificationService {
 
   Future<String> getAccessToken() async {
     // Your client ID and client secret obtained from Google Cloud Console
-    final serviceAccountJson = {};
+    final serviceAccountJson = {
+      // "type": "service_account",
+      // "project_id": "onlyucafe-ade4f",
+      // "private_key_id": "abd6367fd427f5cf81b392b4ca35f55f75a7ee0b",
+      // "private_key":
+      //     "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDXxlkFd7VmXeAS\nu28BzDhFjyFxKcFKuiDXhr5TGceI2ucYzKOXcp6nzSOww33omE1D1AZ4mKgiBdbu\ngQS9uCY3jUpWn4ro4GnUv5EmSKNE2wvyPQ6fIeW9lef3XgwrQLDhpvltm4jd8EML\nBG4HITifbPM+pWvhyxxQPZ4VskU21LqH2puPg97PqoJ/97mCCNJcE/oZtcHonzBK\nw9ZzKbPFMF7yEAvh7WzlVkZI5/R2oQ2dhQQdK3vL769C034v3OkXci3l65jbXuw3\ns25JkbHxtb2cUQ0oZ9ivAkZ+Xq5wM41u/iDIOUFi9iLI2QccROw6qq/POhG/ekDz\ntkwGJrh5AgMBAAECggEAJhH15PQRCmWnwkZVuKB6kTNGuDugwfmDD+PTMsBKp0fQ\nHF0GxBLSEVMtZ+OmFGLCxyPinGZ6y73yBRS4bGzQOV7xbcUqchoeMg42ouWQAPcQ\n7YV+Te9iJIgNbGSoiv0X+EhIm+EkTdw1R/1ZGGLxJZfIdxYiqaz3auTkPnm8ooak\n+BnDx1GfhxWEHLTMFFijJlQid65139eolZQp4gXJQEyKFHO6wYmVbBCDYVjm89F4\nSnztVQnREgZhw+NR0rV+rmylfdCO63XvqLjOUR84yxbF/WM8UjboKZMIfqwpSDUx\nzNz+fvh9mlEjpNCLDeKqjTFmuHYBdisnvwPb+YgMMQKBgQD2Nv9yWSSraMJGWX1K\nU1cot47h25QZD0iqKsWm/Cmr5Lgfj/WqjkIHKzk49TsFQzOTdz1OijTXXniNOgP8\nzAxBRn0Ww5c2z7mharHiG1G4pECUcKEe20vFDTkqNPc67HALL1fZM8hftyfvPD8g\ndXcbAomL6PE4B+SfLOSTK1sP1QKBgQDgWabCX0blGctFpK0HKt7AAR+cgjZZB3Fk\nVa/eE1twZVsrgIbtCzimGDVI+Vb7XJkRTCJMH77qIGMwmKZJtU3HofKifhjbBAho\nkGCoiwZkAiun2Ytc2zf21wE7mT8/KyaJ+VxkUVu5vE4f70BCviUxSTjl3hOsQr2B\n2Pt/7Na8FQKBgFr5EUOX6nOnHnlN4XxP9NlnkVSkhEEKI6g0a5l6fI810E5hK71c\nGMt7TgZcnfUg0nK/URiu+j1Fe7d64zRJ1JFd0SRTGpE3CXi56oYH4BcgIXh3cSDs\nmD9z1lZhAaR07iVD1eq8NmIfU5MSqKR+ooaJVncql85DJFcoCEDUeS4NAoGAYbvs\nf6SN9+Qiv3YbwpGUdESJBt9a2bH6XeFOOgpovTAKZYsaPE21IfZN0Dp/AAW40OY/\n0rXJr6joTRVS661F8v/D+bHBFjhNiW/MC+B0qkCf0AFfStZdLPVBHjuGZ/heU6ED\n9NfUg7dauWK6tdirzyq81LbIDzUL5XMnLPV6HnkCgYEA5UTIipIupQinSZjIlMVt\n274jSehDCMk40B+CwqS1Grs8KZ2bjh8jmFimRUJFXSySGH0/gmK+R9Nk7GhcHA7Y\n76kmtrE5d3sR59O/KWJFFWpZs8OKmZLru71s8pAmSAJOxEhcDoXDLqQlqi4nKrri\n9ox7idatz/MgcLEiAx7G9gE=\n-----END PRIVATE KEY-----\n",
+      // "client_email":
+      //     "firebase-adminsdk-vg41c@onlyucafe-ade4f.iam.gserviceaccount.com",
+      // "client_id": "118236171447788246397",
+      // "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      // "token_uri": "https://oauth2.googleapis.com/token",
+      // "auth_provider_x509_cert_url":
+      //     "https://www.googleapis.com/oauth2/v1/certs",
+      // "client_x509_cert_url":
+      //     "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-vg41c%40onlyucafe-ade4f.iam.gserviceaccount.com",
+      // "universe_domain": "googleapis.com"
+    };
 
     List<String> scopes = [
       "https://www.googleapis.com/auth/userinfo.email",

@@ -404,6 +404,8 @@ class _CheckOutPageState extends State<CheckOutPage> {
         items: _cartItems,
         totalAmount: finalAmount,
         timestamp: Timestamp.now(),
+        foodRating: 0.0,
+        serviceRating: 0.0,
       );
 
       // Add the order to Firestore with auto-generated ID
@@ -441,212 +443,337 @@ class _CheckOutPageState extends State<CheckOutPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 248, 240, 238),
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 229, 202, 195),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        title: const Text(
-          "Check Out",
-          style: TextStyle(
-              fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.black),
-        ),
-        centerTitle: true,
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color.fromARGB(255, 248, 240, 238),
+    appBar: AppBar(
+      backgroundColor: const Color.fromARGB(255, 229, 202, 195),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : _errorMessage != null
-              ? Center(
-                  child: Text('Error: $_errorMessage'),
-                )
-              : Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Name: $_userName',
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              const Text('Choose Option:'),
-                              const SizedBox(width: 16),
-                              DropdownButton<String>(
-                                value: _selectedOption,
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedOption = newValue!;
-                                    if (_selectedOption == 'Dine In') {
-                                      _selectedTime = null;
-                                    }
-                                  });
-                                },
-                                items: <String>[
-                                  'Dine In',
-                                  'Pickup'
-                                ].map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value),
-                                  );
-                                }).toList(),
+      title: const Text(
+        "Check Out",
+        style: TextStyle(
+          fontSize: 20.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+      ),
+      centerTitle: true,
+    ),
+    body: _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(),
+          )
+        : _errorMessage != null
+            ? Center(
+                child: Text('Error: $_errorMessage'),
+              )
+            : Stack(
+                children: [
+                  SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Name:',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      Text(
+                                        _userName,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Order Type:',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      DropdownButton<String>(
+                                        value: _selectedOption,
+                                        onChanged: (String? newValue) {
+                                          setState(() {
+                                            _selectedOption = newValue!;
+                                            if (_selectedOption == 'Dine In') {
+                                              _selectedTime = null;
+                                            } else if (_selectedOption ==
+                                                'Pickup') {
+                                              _selectedTime =
+                                                  'ASAP'; // Set _selectedTime to 'ASAP' if Pickup is selected
+                                            }
+                                          });
+                                        },
+                                        items: <String>['Dine In', 'Pickup']
+                                            .map<DropdownMenuItem<String>>(
+                                                (String value) {
+                                          return DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Text(
+                                              value,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_selectedOption == 'Pickup') ...[
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Pickup Time:',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                        Expanded(
+                                          child: Align(
+                                            alignment: Alignment.centerRight,
+                                            child: DropdownButton<String>(
+                                              value: _selectedTime,
+                                              onChanged: (String? newValue) {
+                                                setState(() {
+                                                  _selectedTime = newValue!;
+                                                });
+                                              },
+                                              items: _timeOptions
+                                                  .map<
+                                                      DropdownMenuItem<
+                                                          String>>((String
+                                                      value) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(
+                                                    value,
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: value == 'ASAP'
+                                                          ? Colors.black
+                                                          : null,
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                          if (_selectedOption == 'Pickup') ...[
-                            const SizedBox(height: 16),
-                            const Text('Choose Pickup Time:'),
-                            const SizedBox(height: 8),
-                            DropdownButton<String>(
-                              value: _selectedTime,
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _selectedTime = newValue!;
-                                });
-                              },
-                              items: _timeOptions.map<DropdownMenuItem<String>>(
-                                  (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 8.0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Order Summary',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ListView(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 18),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                children:
+                                    List.generate(_cartItems.length, (index) {
+                                  final cartItem = _cartItems[index];
+                                  final isLastItem =
+                                      index == _cartItems.length - 1;
+                                  return Column(
+                                    children: [
+                                      ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                vertical: 10, horizontal: 12),
+                                        leading: Image.network(
+                                          cartItem.menuItem.imageUrl,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                        ),
+                                        title: Text(
+                                          cartItem.menuItem.name,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16),
+                                        ),
+                                        subtitle: Text(
+                                          'Price: RM${cartItem.menuItem.price.toStringAsFixed(2)}',
+                                        ),
+                                        trailing: Text('x ${cartItem.quantity}'),
+                                      ),
+                                      if (!isLastItem)
+                                        const Divider(
+                                          indent: 16,
+                                          endIndent: 16,
+                                          height: 0,
+                                        ),
+                                    ],
+                                  );
+                                }),
+                              ),
                             ),
                           ],
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 100),
+                      ],
                     ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _cartItems.length,
-                        itemBuilder: (context, index) {
-                          final cartItem = _cartItems[index];
-                          return ListTile(
-                            leading: Image.network(
-                              cartItem.menuItem.imageUrl,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            ),
-                            title: Text(cartItem.menuItem.name),
-                            subtitle: Text(
-                              'Price: RM${cartItem.menuItem.price.toStringAsFixed(2)}',
-                            ),
-                            trailing: Text('x ${cartItem.quantity}'),
-                          );
-                        },
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Subtotal:',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                              Text(
-                                'RM${_totalPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'SST (8%):',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                              Text(
-                                'RM${gst.toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Service Tax (5%):',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                              Text(
-                                'RM${serviceTax.toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                            ],
-                          ),
-                          const Divider(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Total Price:',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'RM${finalAmount.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.zero, // No border radius
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, -3), // Adjust shadow offset
                           ),
                         ],
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _placeOrder(context);
-                        },
-                        child: const Text(
-                          'Place Order',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: Size(double.infinity, 50),
-                          backgroundColor:
-                              const Color.fromARGB(255, 195, 133, 134),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 15, horizontal: 130),
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Subtotal:',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                Text(
+                                  'RM${_totalPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'SST (8%):',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                Text(
+                                  'RM${gst.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Service Tax (5%):',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                Text(
+                                  'RM${serviceTax.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ],
+                            ),
+                            const Divider(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total Price:',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'RM${finalAmount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Center( // Center widget added here
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  _placeOrder(context);
+                                },
+                                child: const Text(
+                                  'Place Order',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(double.infinity, 50),
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 195, 133, 134),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 15, horizontal: 110),
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
-    );
-  }
-}
+                  ),
+                ],
+              ),
+  );
+}}

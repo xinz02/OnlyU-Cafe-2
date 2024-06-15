@@ -1,7 +1,9 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+import 'rating.dart'; // Import for RatingWidget
 
 class OrderDetailsPage extends StatefulWidget {
   final DocumentSnapshot order;
@@ -9,21 +11,60 @@ class OrderDetailsPage extends StatefulWidget {
   const OrderDetailsPage({Key? key, required this.order}) : super(key: key);
 
   @override
-  State<OrderDetailsPage> createState() => _OrderDetailsPageState();
+  _OrderDetailsPageState createState() => _OrderDetailsPageState();
 }
 
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
   String formatTimestamp(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
-    dateTime = dateTime
-        .add(const Duration(hours: 8)); // Adjust to Malaysia time (UTC+8)
+    dateTime = dateTime.add(const Duration(hours: 8)); // Adjust to Malaysia time (UTC+8)
     DateFormat dateFormat = DateFormat('d/M/yyyy h:mm:ss a');
     return dateFormat.format(dateTime);
+  }
+
+  double foodRating = 0;
+  double serviceRating = 0;
+
+  void _submitRating(double foodRating, double serviceRating) {
+    // Assuming you have an 'orders' collection where the ratings are stored
+    CollectionReference orders = FirebaseFirestore.instance.collection('orders');
+
+    orders.doc(widget.order.id).update({
+      'foodRating': foodRating,
+      'serviceRating': serviceRating,
+    }).then((value) {
+      // Handle successful submission (e.g., show success message)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ratings updated successfully!'),
+        ),
+      );
+      setState(() {
+        this.foodRating = foodRating;
+        this.serviceRating = serviceRating;
+      });
+    }).catchError((error) {
+      // Handle errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update ratings: $error'),
+        ),
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final items = List<Map<String, dynamic>>.from(widget.order['items']);
+    double totalOrderPrice = 0.0;
+
+    // Calculate total order price
+    items.forEach((item) {
+      double price = item['price'] as double;
+      int quantity = item['quantity'] as int;
+      totalOrderPrice += (price * quantity);
+    });
+
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 248, 240, 238),
       appBar: AppBar(
@@ -36,175 +77,160 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         ),
         title: const Text(
           "Order Details",
-          style: TextStyle(
-              fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.black),
+          style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.black),
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Order Summary: ",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Order ID: ${widget.order.id}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Order Status: ${widget.order['status']}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            Text(
-              'Order Time: ${formatTimestamp(widget.order['timestamp'])}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            Text(
-              'Option: ${widget.order['option']}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            if (widget.order['option'] == 'Pickup')
-              Text(
-                'Pickup Time: ${widget.order['pickupTime']}',
-                style: const TextStyle(fontSize: 16),
-              ),
-            const SizedBox(height: 20),
-            // Expanded(
-            //   child: ListView.builder(
-            //     itemCount: items.length,
-            //     itemBuilder: (context, index) {
-            //       final item = items[index];
-            //       final price =
-            //           double.parse(item['price'].toString()).toStringAsFixed(2);
-            //       return
-            //           // Container(
-            //           // decoration: BoxDecoration(
-            //           //   borderRadius: BorderRadius.circular(15),
-            //           // color: Colors.white,
-            //           // ),
-            //           // child:
-            //           Column(
-            //         children: [
-            //           ListTile(
-            //             leading: Image.network(item['imageUrl'] as String),
-            //             title: Text(item['name'] as String),
-            //             subtitle: Column(
-            //               crossAxisAlignment: CrossAxisAlignment.start,
-            //               children: [
-            //                 Text('Category: ${item['category']}'),
-            //                 Text('Description: ${item['description']}'),
-            //                 Text('Quantity: ${item['quantity']}'),
-            //                 Text('Price: \$$price'),
-            //               ],
-            //             ),
-            //           ),
-            //           if (index < items.length - 1) const Divider(),
-            //         ],
-            //         // ),
-            //       );
-            //     },
-            //   ),
-            // ),
-            // Container(
-            //   child:  for (int i = 0; i < items.length; i++) Container(child: Text('Hi')),
-            // ),
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.white,
-              ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: items
-                        .map((item) => Container(
-                            decoration: BoxDecoration(
-                                border: Border(
-                                    bottom: BorderSide(color: Colors.grey))),
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 12, 12, 15),
-                              child: Row(
-                                // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Image.network(
-                                    item['imageUrl'] as String,
-                                    width: 120,
-                                    height: 120,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item['name'] as String,
-                                          textAlign: TextAlign.left,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: 5,
-                                        ),
-                                        Text(
-                                          'RM ${double.parse((item['price'] * item['quantity']).toString()).toStringAsFixed(2)}',
-                                          style: TextStyle(fontSize: 16),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    'x ${item['quantity']}',
-                                    style: TextStyle(fontSize: 18),
-                                  ),
-                                ],
-                              ),
-                            )))
-                        .toList(),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
+                  // First Container Box for Order Details
                   Container(
-                    padding: EdgeInsets.all(8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Total: ',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'RM ${double.parse(widget.order['totalAmount'].toString()).toStringAsFixed(2)}',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
+                        _buildOrderDetail('Order ID:', widget.order.id),
+                        _buildOrderDetail('Order Status:', widget.order['status']),
+                        _buildOrderDetail('Order Time:', formatTimestamp(widget.order['timestamp'])),
+                        _buildOrderDetail('Option:', widget.order['option']),
+                        if (widget.order['option'] == 'Pickup')
+                          _buildOrderDetail('Pickup Time:', widget.order['pickupTime']),
                       ],
                     ),
-                  )
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Order Summary Text
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Order Summary',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+
+                  // Ordered Items Container Box
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: List.generate(items.length, (index) {
+                        final item = items[index];
+                        final double totalPrice = (item['price'] as double) * (item['quantity'] as int);
+                        final isLastItem = index == items.length - 1;
+                        return Column(
+                          children: [
+                            ListTile(
+                              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                              leading: Image.network(
+                                item['imageUrl'] as String,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                              ),
+                              title: Text(
+                                item['name'] as String,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              subtitle: Text(
+                                'Price: RM${(item['price'] as double).toStringAsFixed(2)}',
+                              ),
+                              trailing: Text('x ${item['quantity']}'),
+                            ),
+                            if (!isLastItem)
+                              const Divider(indent: 16, endIndent: 16, height: 0),
+                          ],
+                        );
+                      })..add(
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total:',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                'RM ${totalOrderPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
+          ),
 
-            // if (widget.order['status'] == 'Ready')
-            //   ElevatedButton(
-            //     onPressed: () {
-            //       // Handle rating functionality
-            //     },
-            //     child: const Text('Rate'),
-            //   ),
-          ],
-        ),
+          // Rate this Order Button
+          if (widget.order['status'] == 'Picked Up')
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+              child: ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => RatingWidget(
+                      order: widget.order,
+                      onRatingSubmitted: _submitRating,
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40), 
+                  backgroundColor: const Color.fromARGB(255, 195, 133, 134),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Rate this Order',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+            ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildOrderDetail(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }

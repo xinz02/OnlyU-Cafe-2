@@ -50,6 +50,7 @@ dependencies:
   googleapis: ^13.1.0
   googleapis_auth: ^1.5.1
   flutter_local_notifications: ^17.1.2
+  flutter_rating_bar: ^4.0.0
 
 dev_dependencies:
   flutter_test:

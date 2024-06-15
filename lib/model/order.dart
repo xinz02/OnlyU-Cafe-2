@@ -10,6 +10,8 @@ class Order {
   final double totalAmount;
   final String status;
   final Timestamp timestamp;
+  final double foodRating; // New field for food rating
+  final double serviceRating; // New field for service rating
 
   Order({
     required this.userId,
@@ -20,6 +22,8 @@ class Order {
     required this.totalAmount,
     this.status = 'Paid',
     required this.timestamp,
+    required this.foodRating, // Optional parameter for food rating
+    required this.serviceRating, // Optional parameter for service rating
   });
 
   Map<String, dynamic> toMap() {
@@ -32,6 +36,8 @@ class Order {
       'totalAmount': totalAmount,
       'status': status,
       'timestamp': timestamp,
+      'foodRating': foodRating, // Add food rating to the map
+      'serviceRating': serviceRating, // Add service rating to the map
     };
   }
 }
