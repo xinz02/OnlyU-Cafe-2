@@ -19,6 +19,8 @@ class _AdminReportPageState extends State<AdminReportPage> {
   int totalItems = 0;
   double totalRevenue = 0.0;
   double totalRevenueToday = 0.0;
+  double averageFoodRating = 0.0;
+  double averageServiceRating = 0.0;
   String selectedFilter = 'All Time';
   List<String> filters = ['All Time', 'Today', 'This Week', 'This Month'];
 
@@ -33,6 +35,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
     await fetchCategoriesCount();
     await fetchItemsCount();
     await fetchOrdersForTimeFrame(selectedFilter);
+    await fetchRatings();
     setState(() {});
   }
 
@@ -103,6 +106,33 @@ class _AdminReportPageState extends State<AdminReportPage> {
     });
   }
 
+  Future<void> fetchRatings() async {
+    final ordersSnapshot =
+        await FirebaseFirestore.instance.collection('orders').get();
+
+    double totalFoodRating = 0.0;
+    double totalServiceRating = 0.0;
+    int ratedOrdersCount = 0;
+
+    for (var doc in ordersSnapshot.docs) {
+      if (doc.data().containsKey('foodRating') &&
+          doc['foodRating'] != null &&
+          doc['foodRating'] != 0 &&
+          doc.data().containsKey('serviceRating') &&
+          doc['serviceRating'] != null &&
+          doc['serviceRating'] != 0) {
+        totalFoodRating += doc['foodRating'];
+        totalServiceRating += doc['serviceRating'];
+        ratedOrdersCount++;
+      }
+    }
+
+    setState(() {
+      averageFoodRating = ratedOrdersCount > 0 ? totalFoodRating / ratedOrdersCount : 0.0;
+      averageServiceRating = ratedOrdersCount > 0 ? totalServiceRating / ratedOrdersCount : 0.0;
+    });
+  }
+
   Widget _buildStatCard(
       String title, String value, IconData icon, VoidCallback onTap) {
     return Card(
@@ -132,12 +162,11 @@ class _AdminReportPageState extends State<AdminReportPage> {
       backgroundColor: const Color.fromARGB(255, 248, 240, 238),
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 229, 202, 195),
-        // appBar: AppBar(
         title: Text('Report'),
         centerTitle: false,
         elevation: 0,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,6 +267,22 @@ class _AdminReportPageState extends State<AdminReportPage> {
                   context,
                   MaterialPageRoute(builder: (context) => AddMenuItemPage()),
                 );
+              },
+            ),
+            _buildStatCard(
+              'Average Food Rating',
+              '${averageFoodRating.toStringAsFixed(1)}/5.0',
+              Icons.star,
+              () {
+                // No action needed for rating stat card
+              },
+            ),
+            _buildStatCard(
+              'Average Service Rating',
+              '${averageServiceRating.toStringAsFixed(1)}/5.0',
+              Icons.star_half,
+              () {
+                // No action needed for rating stat card
               },
             ),
           ],
