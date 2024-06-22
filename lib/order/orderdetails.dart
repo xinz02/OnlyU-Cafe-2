@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -66,6 +64,27 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     });
   }
 
+  double calculateSubtotal(List<Map<String, dynamic>> items) {
+    double subtotal = 0.0;
+    for (var item in items) {
+      double price = item['price'] as double;
+      int quantity = item['quantity'] as int;
+      subtotal += (price * quantity);
+    }
+    return subtotal;
+  }
+
+  double calculateTotalAmount(List<Map<String, dynamic>> items) {
+    // Assuming tax rates are 5% and 8%
+    double subtotal = calculateSubtotal(items);
+    double taxRate1 = 0.05; // 5% tax
+    double taxRate2 = 0.08; // 8% tax
+    double taxAmount1 = subtotal * taxRate1;
+    double taxAmount2 = subtotal * taxRate2;
+    double totalAmount = subtotal + taxAmount1 + taxAmount2;
+    return totalAmount;
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = List<Map<String, dynamic>>.from(widget.order['items']);
@@ -77,6 +96,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       int quantity = item['quantity'] as int;
       totalOrderPrice += (price * quantity);
     });
+
+    // Calculate total amount including tax
+    double totalAmount = calculateTotalAmount(items);
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 248, 240, 238),
@@ -250,16 +272,66 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 })..add(
                   Container(
                     padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
                       children: [
-                        const Text(
-                          'Total:',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Subtotal:',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'RM ${totalOrderPrice.toStringAsFixed(2)}',
+                              style: const
+                                                            TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'RM ${totalOrderPrice.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Tax (5%):',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            Text(
+                              'RM ${(totalOrderPrice * 0.05).toStringAsFixed(2)}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Tax (8%):',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            Text(
+                              'RM ${(totalOrderPrice * 0.08).toStringAsFixed(2)}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const Divider(indent: 16, endIndent: 16, height: 0),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total (include tax):',
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                'RM ${calculateTotalAmount(items).toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -318,3 +390,4 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 }
+
