@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:onlyu_cafe/admin/admin_order.dart';
 import 'package:onlyu_cafe/admin/admin_report.dart';
+import 'package:onlyu_cafe/admin/admin_upcoming_order.dart';
 
 class AdminHomePage extends StatefulWidget {
   final VoidCallback navigateToMenuPage;
 
-  const AdminHomePage({Key? key, required this.navigateToMenuPage}) : super(key: key);
+  const AdminHomePage({Key? key, required this.navigateToMenuPage})
+      : super(key: key);
 
   @override
   _AdminHomePageState createState() => _AdminHomePageState();
@@ -78,7 +80,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             ],
                           ),
                           SizedBox(width: 40),
-                          Icon(Icons.arrow_forward_ios_rounded, color: Colors.white),
+                          Icon(Icons.arrow_forward_ios_rounded,
+                              color: Colors.white),
                         ],
                       ),
                     ),
@@ -86,7 +89,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 } else {
                   final orders = snapshot.data!.docs.where((doc) {
                     final timestamp = (doc['timestamp'] as Timestamp).toDate();
-                    return timestamp.isAfter(startOfDay) && timestamp.isBefore(endOfDay);
+                    return timestamp.isAfter(startOfDay) &&
+                        timestamp.isBefore(endOfDay);
                   }).toList();
 
                   int totalOrders = orders.length;
@@ -94,7 +98,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   return ElevatedButton(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const AdminOrderPage(),
+                        builder: (context) => const AdminUpcomingOrderPage(),
+                        //!
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -133,7 +138,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             ],
                           ),
                           const SizedBox(width: 40),
-                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              color: Colors.white),
                         ],
                       ),
                     ),
@@ -209,13 +215,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   if (!snapshot.hasData) {
                     return const CircularProgressIndicator();
                   } else {
-                    final orderData = snapshot.data!.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+                    final orderData = snapshot.data!.docs
+                        .map((doc) => doc.data() as Map<String, dynamic>)
+                        .toList();
                     final Map<String, int> itemCount = {};
 
                     for (var order in orderData) {
                       for (var item in order['items']) {
                         if (itemCount.containsKey(item['name'])) {
-                          itemCount[item['name']] = (itemCount[item['name']] ?? 0) + (item['quantity'] as int);
+                          itemCount[item['name']] =
+                              (itemCount[item['name']] ?? 0) +
+                                  (item['quantity'] as int);
                         } else {
                           itemCount[item['name']] = item['quantity'] as int;
                         }
@@ -227,42 +237,47 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       ..sort((a, b) => b.value.compareTo(a.value));
 
                     // Determine the highest sale item
-                    String highestSaleItemName = sortedItems.isNotEmpty ? sortedItems.first.key : '';
-                    int highestSaleItemQty = sortedItems.isNotEmpty ? sortedItems.first.value : 0;
+                    String highestSaleItemName =
+                        sortedItems.isNotEmpty ? sortedItems.first.key : '';
+                    int highestSaleItemQty =
+                        sortedItems.isNotEmpty ? sortedItems.first.value : 0;
 
                     return Column(
-  crossAxisAlignment: CrossAxisAlignment.stretch,
-  children: [
-    Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.trending_up, color: Colors.green, size: 36), // Icon for highest sale item
-        title: Text(
-          'Top Selling Item Today',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              '$highestSaleItemName',
-              style: TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Quantity Sold: $highestSaleItemQty',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    ),
-    const SizedBox(height: 20),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ListTile(
+                            leading: Icon(Icons.trending_up,
+                                color: Colors.green,
+                                size: 36), // Icon for highest sale item
+                            title: Text(
+                              'Top Selling Item Today',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8),
+                                Text(
+                                  '$highestSaleItemName',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Quantity Sold: $highestSaleItemQty',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
                         // List of items by sale quantity
                         Expanded(
                           child: ListView.builder(
