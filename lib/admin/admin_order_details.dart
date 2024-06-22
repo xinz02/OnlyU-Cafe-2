@@ -206,32 +206,31 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
                 },
               ),
             ),
-            if (_selectedStatus != 'Picked Up')
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 195, 133, 134),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {
-                    if (_selectedStatus != null) {
-                      _updateOrderStatus(_selectedStatus!);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please select a status')),
-                      );
-                    }
-                  },
-                  child: const Text(
-                    'Update Order Status',
-                    style: TextStyle(color: Colors.white),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 195, 133, 134),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                onPressed: () {
+                  if (_selectedStatus != null) {
+                    _updateOrderStatus(_selectedStatus!);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select a status')),
+                    );
+                  }
+                },
+                child: const Text(
+                  'Update Order Status',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
+            ),
           ],
         ),
       ),
