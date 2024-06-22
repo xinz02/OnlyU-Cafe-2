@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:onlyu_cafe/admin/admin_menu.dart'; // Import the AdminMenuPage
 import 'package:onlyu_cafe/product_management/add_menu_item.dart';
-import 'package:onlyu_cafe/admin/admin_userList.dart'; // Import AdminUsersPage
+import 'package:onlyu_cafe/admin/admin_userList.dart';
+import 'package:onlyu_cafe/admin/admin_category.dart'; // Import AdminUsersPage
 
 class AdminSettingPage extends StatelessWidget {
   const AdminSettingPage({Key? key});
@@ -20,6 +21,24 @@ class AdminSettingPage extends StatelessWidget {
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => AdminUsersPage(),
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text('All Categories'),
+              leading: Icon(Icons.category),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => AdminCategoryPage(),
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text('Add Items'),
+              leading: Icon(Icons.add),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => AddMenuItemPage(),
                 ),
               ),
             ),
