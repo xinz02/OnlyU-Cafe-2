@@ -225,7 +225,7 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                         );
                       },
                       separatorBuilder: (context, index) {
-                        return Divider();
+                        return const Divider();
                       },
                     ),
                   ),
