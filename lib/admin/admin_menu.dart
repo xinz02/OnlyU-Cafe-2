@@ -14,10 +14,13 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<String> categories = [];
+  List<String> filteredCategories = [];
   int selectedIndex = 0;
   bool isLoading = true;
   TextEditingController searchController = TextEditingController();
   bool isSearching = false;
+  List<MenuItem> menuItems = []; // Store all menu items
+  List<MenuItem> filteredMenuItems = []; // Store filtered menu items
 
   Future<void> _toggleAvailability(MenuItem menuItem) async {
     try {
@@ -42,8 +45,10 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
           snapshot.docs.map((doc) => doc['name'] as String).toList();
       setState(() {
         categories = fetchedCategories;
+        filteredCategories = fetchedCategories;
         isLoading = false;
       });
+      fetchMenuItems(); // Fetch menu items after fetching categories
     } catch (e) {
       print('Error fetching categories: $e');
       setState(() {
@@ -52,17 +57,37 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
     }
   }
 
-  Stream<QuerySnapshot> filterMenuItems() {
-    if (selectedIndex >= 0 &&
-        selectedIndex < categories.length &&
-        !isSearching) {
-      return _firestore
-          .collection('menu_items')
-          .where('category', isEqualTo: categories[selectedIndex])
-          .snapshots();
-    } else {
-      return _firestore.collection('menu_items').snapshots();
+  Future<void> fetchMenuItems() async {
+    try {
+      QuerySnapshot snapshot = await _firestore.collection('menu_items').get();
+      List<MenuItem> fetchedMenuItems =
+          snapshot.docs.map((doc) => MenuItem.fromDocument(doc)).toList();
+      setState(() {
+        menuItems = fetchedMenuItems;
+        // Initialize filteredMenuItems with items of the selected category initially
+        filteredMenuItems = fetchedMenuItems
+            .where((menuItem) => menuItem.category == categories[selectedIndex])
+            .toList();
+      });
+    } catch (e) {
+      print('Error fetching menu items: $e');
     }
+  }
+
+  void filterMenuItemsByName(String query) {
+    setState(() {
+      isSearching = query.isNotEmpty;
+      // Update filtered menu items based on the search query
+      if (isSearching) {
+        filteredMenuItems = menuItems.where((menuItem) =>
+            menuItem.name.toLowerCase().contains(query.toLowerCase())).toList();
+      } else {
+        // Filter by selected category
+        String selectedCategory = filteredCategories[selectedIndex];
+        filteredMenuItems = menuItems.where((menuItem) =>
+            menuItem.category == selectedCategory).toList();
+      }
+    });
   }
 
   @override
@@ -95,13 +120,11 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                         contentPadding: EdgeInsets.symmetric(vertical: 0),
                       ),
                       onChanged: (value) {
-                        setState(() {
-                          isSearching = value.isNotEmpty;
-                        });
+                        filterMenuItemsByName(value.toLowerCase()); // Convert to lowercase for case-insensitive search
                       },
                     ),
                   ),
-                  if (!isSearching)
+                  if (!isSearching) // Show category selector only if not searching
                     Container(
                       height: 60,
                       margin: EdgeInsets.symmetric(horizontal: 25),
@@ -113,6 +136,9 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                             onTap: () {
                               setState(() {
                                 selectedIndex = index;
+                                // Update filtered menu items when a category is selected
+                                filteredMenuItems = menuItems.where((menuItem) =>
+                                    menuItem.category == categories[selectedIndex]).toList();
                               });
                             },
                             child: Container(
@@ -151,92 +177,55 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                         },
                       ),
                     ),
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 25, vertical: 5),
-                    child: Divider(),
-                  ),
+                  if (!isSearching) // Only show this divider if not searching
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 5),
+                      child: Divider(),
+                    ),
                   Expanded(
-                    child: StreamBuilder<QuerySnapshot>(
-                      stream: isSearching
-                          ? _firestore
-                              .collection('menu_items')
-                              .where('name', isGreaterThanOrEqualTo: searchController.text.trim())
-                              .where('name', isLessThanOrEqualTo: searchController.text.trim() + '\uf8ff')
-                              .snapshots()
-                          : filterMenuItems(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(
-                              child: CircularProgressIndicator());
-                        }
-
-                        if (snapshot.hasError) {
-                          return Center(
-                              child: Text('Error fetching menu items'));
-                        }
-
-                        if (!snapshot.hasData ||
-                            snapshot.data!.docs.isEmpty) {
-                          return Center(
-                              child: Text('No menu items found'));
-                        }
-
-                        List<MenuItem> menuItems = snapshot.data!.docs
-                            .map((doc) => MenuItem.fromDocument(doc))
-                            .toList();
-
-                        if (isSearching) {
-                          // Perform substring search case insensitive
-                          String query = searchController.text.toLowerCase();
-                          menuItems.retainWhere((menuItem) =>
-                              menuItem.name.toLowerCase().contains(query));
-                        }
-
-                        return ListView.separated(
-                          itemCount: menuItems.length,
-                          itemBuilder: (context, index) {
-                            MenuItem menuItem = menuItems[index];
-                            return ListTile(
-                              leading: menuItem.imageUrl.isNotEmpty
-                                  ? Image.network(
-                                      menuItem.imageUrl,
-                                      width: 60,
-                                      height: 60,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Icon(Icons.image),
-                              title: Text(menuItem.name),
-                              subtitle: Text(
-                                  '${menuItem.description}\n${menuItem.price.toStringAsFixed(2)}'),
-                              isThreeLine: true,
-                              trailing: Switch(
-                                activeColor: Colors.green,
-                                value: menuItem.isAvailable,
-                                onChanged: (value) {
-                                  _toggleAvailability(menuItem);
-                                },
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => EditMenuItemForm(
+                    child: ListView.separated(
+                      itemCount: filteredMenuItems.length,
+                      itemBuilder: (context, index) {
+                        MenuItem menuItem = filteredMenuItems[index];
+                        return ListTile(
+                          leading: menuItem.imageUrl.isNotEmpty
+                              ? Image.network(
+                                  menuItem.imageUrl,
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                )
+                              : Icon(Icons.image),
+                          title: Text(menuItem.name),
+                          subtitle: Text(
+                              '${menuItem.description}\n${menuItem.price.toStringAsFixed(2)}'),
+                          isThreeLine: true,
+                          trailing: Switch(
+                            activeColor: Colors.green,
+                            value: menuItem.isAvailable,
+                            onChanged: (value) {
+                              _toggleAvailability(menuItem);
+                            },
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    EditMenuItemForm(
                                       menuItem: menuItem,
                                       onUpdate: (updatedMenuItem) {
                                         // Handle the update of the menu item
                                         // For example, update the state or perform any other action
                                       },
                                     ),
-                                  ),
-                                );
-                              },
+                              ),
                             );
                           },
-                          separatorBuilder: (context, index) {
-                            return Divider();
-                          },
                         );
+                      },
+                      separatorBuilder: (context, index) {
+                        return Divider();
                       },
                     ),
                   ),
