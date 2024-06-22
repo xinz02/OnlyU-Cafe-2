@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:onlyu_cafe/service/notification.dart';
 
 class AdminOrderDetailsPage extends StatefulWidget {
   final DocumentSnapshot order;
 
-  const AdminOrderDetailsPage({Key? key, required this.order}) : super(key: key);
+  const AdminOrderDetailsPage({Key? key, required this.order})
+      : super(key: key);
 
   @override
   _AdminOrderDetailsPageState createState() => _AdminOrderDetailsPageState();
@@ -14,17 +16,20 @@ class AdminOrderDetailsPage extends StatefulWidget {
 
 class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   String? _selectedStatus;
+  late NotificationService _notificationService;
 
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.order['status'];
+    _notificationService = NotificationService();
   }
 
   @override
   Widget build(BuildContext context) {
     final items = List<Map<String, dynamic>>.from(widget.order['items']);
-    final orderTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(widget.order['timestamp'].toDate());
+    final orderTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(
+        widget.order['timestamp'].toDate().add(const Duration(hours: 8)));
 
     // Calculate total amount including tax
     double totalAmount = calculateTotalAmount(items);
@@ -80,10 +85,13 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.order['option'] == 'Pickup')
-                    Text('Pickup Time: ${widget.order['pickupTime'] ?? 'Unknown'}'),
+                    Text(
+                        'Pickup Time: ${widget.order['pickupTime'] ?? 'Unknown'}'),
                   const SizedBox(height: 10),
-                  if (widget.order['foodRating'] != null && widget.order['serviceRating'] != null)
-                    if (widget.order['foodRating'] == 0 || widget.order['serviceRating'] == 0)
+                  if (widget.order['foodRating'] != null &&
+                      widget.order['serviceRating'] != null)
+                    if (widget.order['foodRating'] == 0 ||
+                        widget.order['serviceRating'] == 0)
                       const Text('The user did not rate this order')
                     else
                       Column(
@@ -238,7 +246,8 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
     );
   }
 
-  Widget _buildRatingRow({required IconData icon, required String label, required double rating}) {
+  Widget _buildRatingRow(
+      {required IconData icon, required String label, required double rating}) {
     return Row(
       children: [
         Icon(icon, color: const Color.fromARGB(255, 18, 18, 17), size: 25),
@@ -294,6 +303,24 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
           .doc(widget.order.id)
           .update({'status': newStatus});
 
+      if (newStatus == 'Ready') {
+        // Fetch user ID from the order document
+        String userId = widget.order['userId'];
+
+        // Get user's device token
+        String? deviceToken =
+            await _notificationService.getUserDeviceToken(userId);
+
+        if (deviceToken != null) {
+          // Send notification when status is updated to 'Ready'
+          await _notificationService.sendMessage(
+              Future.value(deviceToken),
+              'Order Ready', // Title of the message
+              'Your order ${widget.order.id} is ready for pickup!' // Body of the message
+              );
+        }
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Order status updated successfully')),
       );
@@ -304,7 +331,8 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
     }
   }
 
-  Future<void> _updateRatingInFirestore(double newRating, String ratingField) async {
+  Future<void> _updateRatingInFirestore(
+      double newRating, String ratingField) async {
     try {
       await FirebaseFirestore.instance
           .collection('orders')
