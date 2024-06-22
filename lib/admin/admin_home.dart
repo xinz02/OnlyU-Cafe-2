@@ -251,8 +251,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
           children: <Widget>[
             const SizedBox(height: 40),
             StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance.collection('orders').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('orders')
+                  .where('status', isNotEqualTo: 'Picked Up')
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return ElevatedButton(
@@ -298,7 +300,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     ),
                   );
                 } else {
-                  int totalOrders = snapshot.data!.size;
+                  final now = DateTime.now();
+                  final startOfDay = DateTime(now.year, now.month, now.day);
+                  final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+                  final orders = snapshot.data!.docs.where((doc) {
+                    final timestamp = (doc['timestamp'] as Timestamp).toDate();
+                    return timestamp.isAfter(startOfDay) && timestamp.isBefore(endOfDay);
+                  }).toList();
+
+                  int totalOrders = orders.length;
+
                   return ElevatedButton(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
