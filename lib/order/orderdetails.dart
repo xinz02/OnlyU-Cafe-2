@@ -1,9 +1,10 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'rating.dart'; // Import for RatingWidget
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'rating.dart' as orderRating; // Import for RatingWidget
 
 class OrderDetailsPage extends StatefulWidget {
   final DocumentSnapshot order;
@@ -24,14 +25,25 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
   double foodRating = 0;
   double serviceRating = 0;
+  bool ratingsSubmitted = false; // Flag to track if ratings have been submitted
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if ratings exist for this order
+    foodRating = (widget.order['foodRating'] ?? 0).toDouble();
+    serviceRating = (widget.order['serviceRating'] ?? 0).toDouble();
+    // Check if ratings have been submitted
+    ratingsSubmitted = foodRating != 0 && serviceRating != 0;
+  }
 
   void _submitRating(double foodRating, double serviceRating) {
     // Assuming you have an 'orders' collection where the ratings are stored
     CollectionReference orders = FirebaseFirestore.instance.collection('orders');
 
     orders.doc(widget.order.id).update({
-      'foodRating': foodRating,
-      'serviceRating': serviceRating,
+      'foodRating': foodRating.toInt(),
+      'serviceRating': serviceRating.toInt(),
     }).then((value) {
       // Handle successful submission (e.g., show success message)
       ScaffoldMessenger.of(context).showSnackBar(
@@ -42,6 +54,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       setState(() {
         this.foodRating = foodRating;
         this.serviceRating = serviceRating;
+        ratingsSubmitted = true; // Update flag to true after submitting ratings
       });
     }).catchError((error) {
       // Handle errors
@@ -81,127 +94,199 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // First Container Box for Order Details
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // First Container Box for Order Details
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildOrderDetail('Order ID:', widget.order.id),
-                        _buildOrderDetail('Order Status:', widget.order['status']),
-                        _buildOrderDetail('Order Time:', formatTimestamp(widget.order['timestamp'])),
-                        _buildOrderDetail('Option:', widget.order['option']),
-                        if (widget.order['option'] == 'Pickup')
-                          _buildOrderDetail('Pickup Time:', widget.order['pickupTime']),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Order Summary Text
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Order Summary',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-
-                  // Ordered Items Container Box
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 18),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      children: List.generate(items.length, (index) {
-                        final item = items[index];
-                        final double totalPrice = (item['price'] as double) * (item['quantity'] as int);
-                        final isLastItem = index == items.length - 1;
-                        return Column(
-                          children: [
-                            ListTile(
-                              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                              leading: Image.network(
-                                item['imageUrl'] as String,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                              ),
-                              title: Text(
-                                item['name'] as String,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              subtitle: Text(
-                                'Price: RM${(item['price'] as double).toStringAsFixed(2)}',
-                              ),
-                              trailing: Text('x ${item['quantity']}'),
-                            ),
-                            if (!isLastItem)
-                              const Divider(indent: 16, endIndent: 16, height: 0),
-                          ],
-                        );
-                      })..add(
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Total:',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                'RM ${totalOrderPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
+                  _buildOrderDetail('Order ID:', widget.order.id),
+                  _buildOrderDetail('Order Status:', widget.order['status']),
+                  _buildOrderDetail('Order Time:', formatTimestamp(widget.order['timestamp'])),
+                  _buildOrderDetail('Option:', widget.order['option']),
+                  if (widget.order['option'] == 'Pickup')
+                    _buildOrderDetail('Pickup Time:', widget.order['pickupTime']),
                 ],
               ),
             ),
-          ),
 
-          // Rate this Order Button
-          if (widget.order['status'] == 'Picked Up')
+            const SizedBox(height: 20),
+
+            // Show ratings if available or ratings have been submitted
+            if (ratingsSubmitted)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        // Food Icon and Rating
+                        Row(
+                          children: [
+                            Icon(Icons.fastfood, color: const Color.fromARGB(255, 18, 18, 17), size: 25),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Food',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Food Rating Stars
+                        RatingBar.builder(
+                          initialRating: foodRating,
+                          minRating: 1,
+                          direction: Axis.horizontal,
+                          allowHalfRating: true,
+                          itemCount: 5,
+                          itemSize: 25.0,
+                          itemBuilder: (context, index) => Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                          ),
+                          ignoreGestures: true, onRatingUpdate: (double value) {  }, // Disable gesture for rated orders
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        // Service Icon and Rating
+                        Row(
+                          children: [
+                            Icon(Icons.room_service, color: const Color.fromARGB(255, 18, 18, 17), size: 25),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Service',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Service Rating Stars
+                        RatingBar.builder(
+                          initialRating: serviceRating,
+                          minRating: 1,
+                          direction: Axis.horizontal,
+                          allowHalfRating: true,
+                          itemCount: 5,
+                          itemSize: 25.0,
+                          itemBuilder: (context, index) => Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                          ),
+                          ignoreGestures: true, onRatingUpdate: (double value) {  }, // Disable gesture for rated orders
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 20),
+
+            // Order Summary Text
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Order Summary',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+
+            // Ordered Items Container Box
             Container(
+              margin: const EdgeInsets.symmetric(horizontal: 18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                children: List.generate(items.length, (index) {
+                  final item = items[index];
+                  final double totalPrice = (item['price'] as double) * (item['quantity'] as int);
+                  final isLastItem = index == items.length - 1;
+                  return Column(
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        leading: Image.network(
+                          item['imageUrl'] as String,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        ),
+                        title: Text(
+                          item['name'] as String,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        subtitle: Text(
+                          'Price: RM${(item['price'] as double).toStringAsFixed(2)}',
+                        ),
+                        trailing: Text('x ${item['quantity']}'),
+                      ),
+                      if (!isLastItem)
+                        const Divider(indent: 16, endIndent: 16, height: 0),
+                    ],
+                  );
+                })..add(
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total:',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'RM ${totalOrderPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // Rate button at the bottom of the page
+      bottomNavigationBar: !ratingsSubmitted && widget.order['status'] == 'Picked Up'
+          ? Container(
               margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
               child: ElevatedButton(
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (context) => RatingWidget(
+                    builder: (context) => orderRating.RatingWidget(
                       order: widget.order,
                       onRatingSubmitted: _submitRating,
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40), 
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
                   backgroundColor: const Color.fromARGB(255, 195, 133, 134),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -212,9 +297,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
-            ),
-        ],
-      ),
+            )
+          : null,
     );
   }
 

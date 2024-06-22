@@ -19,8 +19,16 @@ class RatingWidget extends StatefulWidget {
 }
 
 class _RatingWidgetState extends State<RatingWidget> {
-  double _foodRating = 0.0;
-  double _serviceRating = 0.0;
+  late double _foodRating;
+  late double _serviceRating;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize ratings if already rated
+    _foodRating = (widget.order['foodRating'] ?? 0).toDouble();
+    _serviceRating = (widget.order['serviceRating'] ?? 0).toDouble();
+  }
 
   void _submitRating() {
     widget.onRatingSubmitted(_foodRating, _serviceRating);
@@ -75,7 +83,7 @@ class _RatingWidgetState extends State<RatingWidget> {
                 itemSize: 40.0,
                 itemBuilder: (context, index) => Icon(
                   Icons.star,
-                  color: _foodRating >= index + 1 ? Colors.amber : Colors.grey,
+                  color: Colors.amber,
                 ),
                 onRatingUpdate: (rating) {
                   setState(() {
@@ -94,7 +102,7 @@ class _RatingWidgetState extends State<RatingWidget> {
                 itemSize: 40.0,
                 itemBuilder: (context, index) => Icon(
                   Icons.star,
-                  color: _serviceRating >= index + 1 ? Colors.amber : Colors.grey,
+                  color: Colors.amber,
                 ),
                 onRatingUpdate: (rating) {
                   setState(() {

@@ -22,6 +22,7 @@ class _MenuPageState extends State<MenuPage> {
   int selectedIndex = 0;
   bool isLoading = true;
   TextEditingController searchController = TextEditingController();
+  bool isSearching = false;
 
   Future<void> _toggleAvailability(MenuItem menuItem) async {
     try {
@@ -58,12 +59,8 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   void filterCategories(String query) {
-    List<String> filteredList = categories.where((category) {
-      return category.toLowerCase().contains(query.toLowerCase());
-    }).toList();
     setState(() {
-      filteredCategories = filteredList;
-      selectedIndex = 0; // Reset selected index to show the first filtered category
+      isSearching = query.isNotEmpty;
     });
   }
 
@@ -99,68 +96,73 @@ class _MenuPageState extends State<MenuPage> {
                     },
                   ),
                 ),
-                Container(
-                  height: 60,
-                  margin: const EdgeInsets.symmetric(horizontal: 25),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: filteredCategories.length,
-                    itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedIndex = index;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          margin: EdgeInsets.only(
-                              right: index == filteredCategories.length - 1 ? 0 : 10,
-                              left: index == 0 ? 0 : 10,
-                              top: 15),
-                          decoration: BoxDecoration(
-                            color: selectedIndex == index
-                                ? const Color(0xFFE5CAC3)
-                                : Colors.transparent,
-                            border: Border.all(
+                if (!isSearching)
+                  Container(
+                    height: 60,
+                    margin: const EdgeInsets.symmetric(horizontal: 25),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: filteredCategories.length,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedIndex = index;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            margin: EdgeInsets.only(
+                                right: index == filteredCategories.length - 1 ? 0 : 10,
+                                left: index == 0 ? 0 : 10,
+                                top: 15),
+                            decoration: BoxDecoration(
                               color: selectedIndex == index
-                                  ? Colors.transparent
+                                  ? const Color(0xFFE5CAC3)
                                   : Colors.transparent,
+                              border: Border.all(
+                                color: selectedIndex == index
+                                    ? Colors.transparent
+                                    : Colors.transparent,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Center(
-                            child: Text(
-                              filteredCategories[index],
-                              style: TextStyle(
-                                  color: selectedIndex == index
-                                      ? const Color(0xFF4B371C)
-                                      : Colors.black,
-                                  fontWeight: selectedIndex == index
-                                      ? FontWeight.bold
-                                      : FontWeight.w400,
-                                  fontSize: 15),
+                            child: Center(
+                              child: Text(
+                                filteredCategories[index],
+                                style: TextStyle(
+                                    color: selectedIndex == index
+                                        ? const Color(0xFF4B371C)
+                                        : Colors.black,
+                                    fontWeight: selectedIndex == index
+                                        ? FontWeight.bold
+                                        : FontWeight.w400,
+                                    fontSize: 15),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
                 Container(
                   margin: const EdgeInsets.symmetric(
                       horizontal: 25,
-                      vertical: 5), // Add horizontal and vertical margin here
+                      vertical: 5),
                   child: const Divider(),
-                ), // Add the Divider widget here
-
+                ),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
-                    stream: _firestore
-                        .collection('menu_items')
-                        .where('category', isEqualTo: filteredCategories.isNotEmpty ? filteredCategories[selectedIndex] : null)
-                        .where('isAvailable', isEqualTo: true)
-                        .snapshots(),
+                    stream: isSearching
+                        ? _firestore
+                            .collection('menu_items')
+                            .where('isAvailable', isEqualTo: true)
+                            .snapshots()
+                        : _firestore
+                            .collection('menu_items')
+                            .where('category', isEqualTo: filteredCategories.isNotEmpty ? filteredCategories[selectedIndex] : null)
+                            .where('isAvailable', isEqualTo: true)
+                            .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Center(child: CircularProgressIndicator());
@@ -176,7 +178,13 @@ class _MenuPageState extends State<MenuPage> {
 
                       List<MenuItem> menuItems = snapshot.data!.docs
                           .map((doc) => MenuItem.fromDocument(doc))
-                          .toList();
+                          .where((menuItem) {
+                            if (isSearching) {
+                              return menuItem.name.toLowerCase().contains(searchController.text.toLowerCase()) ||
+                                     menuItem.description.toLowerCase().contains(searchController.text.toLowerCase());
+                            }
+                            return true;
+                          }).toList();
 
                       return ListView.separated(
                         itemCount: menuItems.length,

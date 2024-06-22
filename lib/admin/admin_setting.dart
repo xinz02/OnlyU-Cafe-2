@@ -1,12 +1,10 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
 import 'package:onlyu_cafe/admin/admin_menu.dart'; // Import the AdminMenuPage
 import 'package:onlyu_cafe/product_management/add_menu_item.dart';
-import 'package:onlyu_cafe/admin/admin_category.dart';
+import 'package:onlyu_cafe/admin/admin_userList.dart'; // Import AdminUsersPage
 
 class AdminSettingPage extends StatelessWidget {
-  const AdminSettingPage({super.key});
+  const AdminSettingPage({Key? key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,20 +15,11 @@ class AdminSettingPage extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           children: <Widget>[
             ListTile(
-              title: Text('All Categories'),
-              leading: Icon(Icons.category),
+              title: Text('All Users'),
+              leading: Icon(Icons.person),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => AdminCategoryPage(),
-                ),
-              ),
-            ),
-            ListTile(
-              title: Text('Add New Item'),
-              leading: Icon(Icons.add),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => AddMenuItemPage(),
+                  builder: (context) => AdminUsersPage(),
                 ),
               ),
             ),
