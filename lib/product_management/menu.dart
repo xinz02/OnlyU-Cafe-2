@@ -37,7 +37,8 @@ class _MenuPageState extends State<MenuPage> {
   Future<void> fetchCategories() async {
     try {
       QuerySnapshot snapshot = await _firestore.collection('Category').get();
-      List<String> fetchedCategories = snapshot.docs.map((doc) => doc['name'] as String).toList();
+      List<String> fetchedCategories =
+          snapshot.docs.map((doc) => doc['name'] as String).toList();
       setState(() {
         categories = fetchedCategories;
         filteredCategories = fetchedCategories;
@@ -55,10 +56,15 @@ class _MenuPageState extends State<MenuPage> {
   Future<void> fetchMenuItems() async {
     try {
       QuerySnapshot snapshot = await _firestore.collection('menu_items').get();
-      List<MenuItem> fetchedMenuItems = snapshot.docs.map((doc) => MenuItem.fromDocument(doc)).toList();
+      List<MenuItem> fetchedMenuItems =
+          snapshot.docs.map((doc) => MenuItem.fromDocument(doc)).toList();
       setState(() {
         menuItems = fetchedMenuItems;
-        filteredMenuItems = fetchedMenuItems.where((menuItem) => menuItem.category == categories[selectedIndex] && menuItem.isAvailable).toList();
+        filteredMenuItems = fetchedMenuItems
+            .where((menuItem) =>
+                menuItem.category == categories[selectedIndex] &&
+                menuItem.isAvailable)
+            .toList();
       });
     } catch (e) {
       print('Error fetching menu items: $e');
@@ -69,9 +75,17 @@ class _MenuPageState extends State<MenuPage> {
     setState(() {
       isSearching = query.isNotEmpty;
       if (isSearching) {
-        filteredMenuItems = menuItems.where((menuItem) => menuItem.name.toLowerCase().contains(query.toLowerCase()) && menuItem.isAvailable).toList();
+        filteredMenuItems = menuItems
+            .where((menuItem) =>
+                menuItem.name.toLowerCase().contains(query.toLowerCase()) &&
+                menuItem.isAvailable)
+            .toList();
       } else {
-        filteredMenuItems = menuItems.where((menuItem) => menuItem.category == filteredCategories[selectedIndex] && menuItem.isAvailable).toList();
+        filteredMenuItems = menuItems
+            .where((menuItem) =>
+                menuItem.category == filteredCategories[selectedIndex] &&
+                menuItem.isAvailable)
+            .toList();
       }
     });
   }
@@ -81,7 +95,8 @@ class _MenuPageState extends State<MenuPage> {
     if (currentUser == null) {
       // If the user is not logged in, redirect to the login page
       context.go('/login'); // Use GoRouter to navigate to login
-      var user = FirebaseAuth.instance.currentUser; // Check again after the login attempt
+      var user = FirebaseAuth
+          .instance.currentUser; // Check again after the login attempt
       if (user == null) {
         return; // User did not log in
       }
@@ -150,13 +165,17 @@ class _MenuPageState extends State<MenuPage> {
                             onTap: () {
                               setState(() {
                                 selectedIndex = index;
-                                filterMenuItemsByName(searchController.text.toLowerCase());
+                                filterMenuItemsByName(
+                                    searchController.text.toLowerCase());
                               });
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               margin: EdgeInsets.only(
-                                  right: index == filteredCategories.length - 1 ? 0 : 10,
+                                  right: index == filteredCategories.length - 1
+                                      ? 0
+                                      : 10,
                                   left: index == 0 ? 0 : 10,
                                   top: 15),
                               decoration: BoxDecoration(
@@ -164,7 +183,9 @@ class _MenuPageState extends State<MenuPage> {
                                     ? const Color(0xFFE5CAC3)
                                     : Colors.transparent,
                                 border: Border.all(
-                                  color: selectedIndex == index ? Colors.transparent : Colors.transparent,
+                                  color: selectedIndex == index
+                                      ? Colors.transparent
+                                      : Colors.transparent,
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -172,8 +193,12 @@ class _MenuPageState extends State<MenuPage> {
                                 child: Text(
                                   filteredCategories[index],
                                   style: TextStyle(
-                                    color: selectedIndex == index ? const Color(0xFF4B371C) : Colors.black,
-                                    fontWeight: selectedIndex == index ? FontWeight.bold : FontWeight.w400,
+                                    color: selectedIndex == index
+                                        ? const Color(0xFF4B371C)
+                                        : Colors.black,
+                                    fontWeight: selectedIndex == index
+                                        ? FontWeight.bold
+                                        : FontWeight.w400,
                                     fontSize: 15,
                                   ),
                                 ),
@@ -185,7 +210,8 @@ class _MenuPageState extends State<MenuPage> {
                     ),
                   if (!isSearching)
                     Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 25, vertical: 5),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 25, vertical: 5),
                       child: const Divider(),
                     ),
                   Expanded(
@@ -210,6 +236,18 @@ class _MenuPageState extends State<MenuPage> {
                             icon: const Icon(Icons.add_shopping_cart),
                             onPressed: () => _handleAddToCart(menuItem.id),
                           ),
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ViewProductDetails(
+                                    item: menuItem,
+                                  ),
+                                ));
+                            setState(() {
+                              selectedIndex = index;
+                            });
+                          },
                         );
                       },
                       separatorBuilder: (context, index) {

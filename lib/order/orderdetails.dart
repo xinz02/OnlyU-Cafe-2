@@ -16,7 +16,8 @@ class OrderDetailsPage extends StatefulWidget {
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
   String formatTimestamp(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
-    dateTime = dateTime.add(const Duration(hours: 8)); // Adjust to Malaysia time (UTC+8)
+    dateTime = dateTime
+        .add(const Duration(hours: 8)); // Adjust to Malaysia time (UTC+8)
     DateFormat dateFormat = DateFormat('d/M/yyyy h:mm:ss a');
     return dateFormat.format(dateTime);
   }
@@ -37,7 +38,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
   void _submitRating(double foodRating, double serviceRating) {
     // Assuming you have an 'orders' collection where the ratings are stored
-    CollectionReference orders = FirebaseFirestore.instance.collection('orders');
+    CollectionReference orders =
+        FirebaseFirestore.instance.collection('orders');
 
     orders.doc(widget.order.id).update({
       'foodRating': foodRating.toInt(),
@@ -112,7 +114,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         ),
         title: const Text(
           "Order Details",
-          style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.black),
+          style: TextStyle(
+              fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.black),
         ),
         centerTitle: true,
       ),
@@ -133,15 +136,17 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 children: [
                   _buildOrderDetail('Order ID:', widget.order.id),
                   _buildOrderDetail('Order Status:', widget.order['status']),
-                  _buildOrderDetail('Order Time:', formatTimestamp(widget.order['timestamp'])),
+                  _buildOrderDetail('Order Time:',
+                      formatTimestamp(widget.order['timestamp'])),
                   _buildOrderDetail('Option:', widget.order['option']),
                   if (widget.order['option'] == 'Pickup')
-                    _buildOrderDetail('Pickup Time:', widget.order['pickupTime']),
+                    _buildOrderDetail(
+                        'Pickup Time:', widget.order['pickupTime']),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            // const SizedBox(height: 20),
 
             // Show ratings if available or ratings have been submitted
             if (ratingsSubmitted)
@@ -160,7 +165,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         // Food Icon and Rating
                         Row(
                           children: [
-                            Icon(Icons.fastfood, color: const Color.fromARGB(255, 18, 18, 17), size: 25),
+                            Icon(Icons.fastfood,
+                                color: const Color.fromARGB(255, 18, 18, 17),
+                                size: 25),
                             const SizedBox(width: 10),
                             Text(
                               'Food',
@@ -181,7 +188,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                             Icons.star,
                             color: Colors.amber,
                           ),
-                          ignoreGestures: true, onRatingUpdate: (double value) {  }, // Disable gesture for rated orders
+                          ignoreGestures: true,
+                          onRatingUpdate: (double
+                              value) {}, // Disable gesture for rated orders
                         ),
                       ],
                     ),
@@ -191,7 +200,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         // Service Icon and Rating
                         Row(
                           children: [
-                            Icon(Icons.room_service, color: const Color.fromARGB(255, 18, 18, 17), size: 25),
+                            Icon(Icons.room_service,
+                                color: const Color.fromARGB(255, 18, 18, 17),
+                                size: 25),
                             const SizedBox(width: 10),
                             Text(
                               'Service',
@@ -212,7 +223,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                             Icons.star,
                             color: Colors.amber,
                           ),
-                          ignoreGestures: true, onRatingUpdate: (double value) {  }, // Disable gesture for rated orders
+                          ignoreGestures: true,
+                          onRatingUpdate: (double
+                              value) {}, // Disable gesture for rated orders
                         ),
                       ],
                     ),
@@ -220,11 +233,12 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 ),
               ),
 
-            const SizedBox(height: 20),
+            // const SizedBox(height: 5),
 
             // Order Summary Text
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -244,12 +258,14 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               child: Column(
                 children: List.generate(items.length, (index) {
                   final item = items[index];
-                  final double totalPrice = (item['price'] as double) * (item['quantity'] as int);
+                  final double totalPrice =
+                      (item['price'] as double) * (item['quantity'] as int);
                   final isLastItem = index == items.length - 1;
                   return Column(
                     children: [
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 12),
                         leading: Image.network(
                           item['imageUrl'] as String,
                           width: 50,
@@ -258,93 +274,108 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         ),
                         title: Text(
                           item['name'] as String,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         subtitle: Text(
                           'Price: RM${(item['price'] as double).toStringAsFixed(2)}',
                         ),
                         trailing: Text('x ${item['quantity']}'),
                       ),
+                      // SizedBox(height: ,)
                       if (!isLastItem)
-                        const Divider(indent: 16, endIndent: 16, height: 0),
+                        const Divider(indent: 10, endIndent: 10, height: 0),
                     ],
                   );
-                })..add(
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Subtotal:',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'RM ${totalOrderPrice.toStringAsFixed(2)}',
-                              style: const
-                                                            TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Tax (5%):',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            Text(
-                              'RM ${(totalOrderPrice * 0.05).toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Tax (8%):',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            Text(
-                              'RM ${(totalOrderPrice * 0.08).toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
-                        const Divider(indent: 16, endIndent: 16, height: 0),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Row(
+                })
+                  ..add(
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'Total (include tax):',
-                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                'Subtotal:',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                'RM ${calculateTotalAmount(items).toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                'RM ${totalOrderPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Tax (5%):',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              Text(
+                                'RM ${(totalOrderPrice * 0.05).toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Tax (8%):',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              Text(
+                                'RM ${(totalOrderPrice * 0.08).toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 2,
+                          ),
+                          const Divider(),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total (include tax):',
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'RM ${calculateTotalAmount(items).toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
               ),
             ),
+            SizedBox(
+              height: 25,
+            )
           ],
         ),
       ),
 
       // Rate button at the bottom of the page
-      bottomNavigationBar: !ratingsSubmitted && widget.order['status'] == 'Picked Up'
+      bottomNavigationBar: !ratingsSubmitted &&
+              widget.order['status'] == 'Picked Up'
           ? Container(
               margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
               child: ElevatedButton(
@@ -358,7 +389,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
                   backgroundColor: const Color.fromARGB(255, 195, 133, 134),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -390,4 +422,3 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 }
-

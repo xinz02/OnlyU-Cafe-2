@@ -134,14 +134,18 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                               setState(() {
                                 selectedIndex = index;
                                 // Update filtered menu items when a category is selected
-                                filteredMenuItems = menuItems.where((menuItem) =>
-                                    menuItem.category == categories[selectedIndex]).toList();
+                                filteredMenuItems = menuItems
+                                    .where((menuItem) =>
+                                        menuItem.category ==
+                                        categories[selectedIndex])
+                                    .toList();
                               });
                             },
                             child: Container(
                               padding: EdgeInsets.symmetric(horizontal: 16),
                               margin: EdgeInsets.only(
-                                  right: index == categories.length - 1 ? 0 : 10,
+                                  right:
+                                      index == categories.length - 1 ? 0 : 10,
                                   left: index == 0 ? 0 : 10,
                                   top: 15),
                               decoration: BoxDecoration(
@@ -185,10 +189,12 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                       builder: (BuildContext context,
                           AsyncSnapshot<QuerySnapshot> snapshot) {
                         if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
                         }
 
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         }
 
@@ -200,15 +206,16 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                         // Update filteredMenuItems based on selected category and search query
                         if (isSearching) {
                           filteredMenuItems = menuItems
-                              .where((menuItem) =>
-                                  menuItem.name
-                                      .toLowerCase()
-                                      .contains(searchController.text.toLowerCase()))
+                              .where((menuItem) => menuItem.name
+                                  .toLowerCase()
+                                  .contains(
+                                      searchController.text.toLowerCase()))
                               .toList();
                         } else {
                           filteredMenuItems = menuItems
                               .where((menuItem) =>
-                                  menuItem.category == categories[selectedIndex])
+                                  menuItem.category ==
+                                  categories[selectedIndex])
                               .toList();
                         }
 
@@ -224,7 +231,7 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                                       height: 60,
                                       fit: BoxFit.cover,
                                     )
-                                  : Icon(Icons.image),
+                                  : const Icon(Icons.image),
                               title: Text(menuItem.name),
                               subtitle: Text(
                                   '${menuItem.description}\n${menuItem.price.toStringAsFixed(2)}'),
@@ -233,7 +240,8 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                                 activeColor: Colors.green,
                                 value: menuItem.isAvailable,
                                 onChanged: (value) {
-                                  _toggleAvailability(menuItem); // Update availability
+                                  _toggleAvailability(
+                                      menuItem); // Update availability
                                 },
                               ),
                               onTap: () async {
@@ -249,8 +257,8 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                                 if (updatedMenuItem != null) {
                                   setState(() {
                                     // Replace the old item with the updated one
-                                    int index = menuItems.indexWhere(
-                                        (item) => item.id == updatedMenuItem.id);
+                                    int index = menuItems.indexWhere((item) =>
+                                        item.id == updatedMenuItem.id);
                                     if (index != -1) {
                                       menuItems[index] = updatedMenuItem;
                                       // Update filtered menu items based on selected category

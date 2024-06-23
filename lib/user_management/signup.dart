@@ -5,6 +5,7 @@ import 'package:onlyu_cafe/home.dart';
 import 'package:onlyu_cafe/main.dart';
 import 'package:onlyu_cafe/user_management/login.dart';
 import 'package:onlyu_cafe/service/auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({Key? key}) : super(key: key);
@@ -39,7 +40,8 @@ class _SignUpState extends State<SignUp> {
           'email': email,
           'imgUrl': '', // default image URL for email/password sign up
           'phoneNumber': phoneNum,
-          'role': 'user'
+          'role': 'user',
+          'deviceToken': ""
         });
 
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -52,6 +54,15 @@ class _SignUpState extends State<SignUp> {
         //   context,
         //   MaterialPageRoute(builder: (context) => const HomePage()),
         // );
+        final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+        String? token = await _firebaseMessaging.getToken();
+        if (token != null) {
+          // Store the device token in Firestore
+          await FirebaseFirestore.instance
+              .collection('User')
+              .doc(userCredential.user!.uid)
+              .update({'deviceToken': token});
+        }
         runApp(MyApp());
       } on FirebaseAuthException catch (e) {
         // handle errors as before
