@@ -22,16 +22,6 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
   List<MenuItem> menuItems = []; // Store all menu items
   List<MenuItem> filteredMenuItems = []; // Store filtered menu items
 
-  Future<void> _toggleAvailability(MenuItem menuItem) async {
-    try {
-      await _firestore.collection('menu_items').doc(menuItem.id).update({
-        'isAvailable': !menuItem.isAvailable,
-      });
-    } catch (e) {
-      print('Error updating availability: $e');
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -40,15 +30,16 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
 
   Future<void> fetchCategories() async {
     try {
-      QuerySnapshot snapshot = await _firestore.collection('Category').get();
-      List<String> fetchedCategories =
-          snapshot.docs.map((doc) => doc['name'] as String).toList();
-      setState(() {
-        categories = fetchedCategories;
-        filteredCategories = fetchedCategories;
-        isLoading = false;
+      // Listen for changes in Firestore categories collection
+      _firestore.collection('Category').snapshots().listen((snapshot) {
+        List<String> fetchedCategories =
+            snapshot.docs.map((doc) => doc['name'] as String).toList();
+        setState(() {
+          categories = fetchedCategories;
+          filteredCategories = fetchedCategories;
+          isLoading = false;
+        });
       });
-      fetchMenuItems(); // Fetch menu items after fetching categories
     } catch (e) {
       print('Error fetching categories: $e');
       setState(() {
@@ -57,37 +48,43 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
     }
   }
 
-  Future<void> fetchMenuItems() async {
-    try {
-      QuerySnapshot snapshot = await _firestore.collection('menu_items').get();
-      List<MenuItem> fetchedMenuItems =
-          snapshot.docs.map((doc) => MenuItem.fromDocument(doc)).toList();
-      setState(() {
-        menuItems = fetchedMenuItems;
-        // Initialize filteredMenuItems with items of the selected category initially
-        filteredMenuItems = fetchedMenuItems
-            .where((menuItem) => menuItem.category == categories[selectedIndex])
-            .toList();
-      });
-    } catch (e) {
-      print('Error fetching menu items: $e');
-    }
-  }
-
   void filterMenuItemsByName(String query) {
     setState(() {
       isSearching = query.isNotEmpty;
       // Update filtered menu items based on the search query
       if (isSearching) {
-        filteredMenuItems = menuItems.where((menuItem) =>
-            menuItem.name.toLowerCase().contains(query.toLowerCase())).toList();
+        filteredMenuItems = menuItems
+            .where((menuItem) =>
+                menuItem.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
       } else {
         // Filter by selected category
         String selectedCategory = filteredCategories[selectedIndex];
-        filteredMenuItems = menuItems.where((menuItem) =>
-            menuItem.category == selectedCategory).toList();
+        filteredMenuItems = menuItems
+            .where((menuItem) => menuItem.category == selectedCategory)
+            .toList();
       }
     });
+  }
+
+  Future<void> _toggleAvailability(MenuItem menuItem) async {
+    try {
+      // Toggle availability locally first
+      setState(() {
+        menuItem.isAvailable = !menuItem.isAvailable;
+      });
+
+      // Update availability in Firestore
+      await _firestore.collection('menu_items').doc(menuItem.id).update({
+        'isAvailable': menuItem.isAvailable,
+      });
+    } catch (e) {
+      print('Error updating availability: $e');
+      // Handle error, e.g., revert the local change if needed
+      setState(() {
+        menuItem.isAvailable = !menuItem.isAvailable; // Revert local change
+      });
+    }
   }
 
   @override
@@ -120,7 +117,7 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                         contentPadding: EdgeInsets.symmetric(vertical: 0),
                       ),
                       onChanged: (value) {
-                        filterMenuItemsByName(value.toLowerCase()); // Convert to lowercase for case-insensitive search
+                        filterMenuItemsByName(value.toLowerCase());
                       },
                     ),
                   ),
@@ -183,49 +180,95 @@ class _AdminMenuPageState extends State<AdminMenuPage> {
                       child: Divider(),
                     ),
                   Expanded(
-                    child: ListView.separated(
-                      itemCount: filteredMenuItems.length,
-                      itemBuilder: (context, index) {
-                        MenuItem menuItem = filteredMenuItems[index];
-                        return ListTile(
-                          leading: menuItem.imageUrl.isNotEmpty
-                              ? Image.network(
-                                  menuItem.imageUrl,
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                )
-                              : Icon(Icons.image),
-                          title: Text(menuItem.name),
-                          subtitle: Text(
-                              '${menuItem.description}\n${menuItem.price.toStringAsFixed(2)}'),
-                          isThreeLine: true,
-                          trailing: Switch(
-                            activeColor: Colors.green,
-                            value: menuItem.isAvailable,
-                            onChanged: (value) {
-                              _toggleAvailability(menuItem);
-                            },
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    EditMenuItemForm(
-                                      menuItem: menuItem,
-                                      onUpdate: (updatedMenuItem) {
-                                        // Handle the update of the menu item
-                                        // For example, update the state or perform any other action
-                                      },
-                                    ),
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: _firestore.collection('menu_items').snapshots(),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<QuerySnapshot> snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        }
+
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+
+                        // Update menuItems with latest data from Firestore
+                        menuItems = snapshot.data!.docs
+                            .map((doc) => MenuItem.fromDocument(doc))
+                            .toList();
+
+                        // Update filteredMenuItems based on selected category and search query
+                        if (isSearching) {
+                          filteredMenuItems = menuItems
+                              .where((menuItem) =>
+                                  menuItem.name
+                                      .toLowerCase()
+                                      .contains(searchController.text.toLowerCase()))
+                              .toList();
+                        } else {
+                          filteredMenuItems = menuItems
+                              .where((menuItem) =>
+                                  menuItem.category == categories[selectedIndex])
+                              .toList();
+                        }
+
+                        return ListView.separated(
+                          itemCount: filteredMenuItems.length,
+                          itemBuilder: (context, index) {
+                            MenuItem menuItem = filteredMenuItems[index];
+                            return ListTile(
+                              leading: menuItem.imageUrl.isNotEmpty
+                                  ? Image.network(
+                                      menuItem.imageUrl,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Icon(Icons.image),
+                              title: Text(menuItem.name),
+                              subtitle: Text(
+                                  '${menuItem.description}\n${menuItem.price.toStringAsFixed(2)}'),
+                              isThreeLine: true,
+                              trailing: Switch(
+                                activeColor: Colors.green,
+                                value: menuItem.isAvailable,
+                                onChanged: (value) {
+                                  _toggleAvailability(menuItem); // Update availability
+                                },
                               ),
+                              onTap: () async {
+                                final updatedMenuItem = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditMenuItemForm(
+                                      menuItem: menuItem,
+                                    ),
+                                  ),
+                                );
+
+                                if (updatedMenuItem != null) {
+                                  setState(() {
+                                    // Replace the old item with the updated one
+                                    int index = menuItems.indexWhere(
+                                        (item) => item.id == updatedMenuItem.id);
+                                    if (index != -1) {
+                                      menuItems[index] = updatedMenuItem;
+                                      // Update filtered menu items based on selected category
+                                      filteredMenuItems = menuItems
+                                          .where((item) =>
+                                              item.category ==
+                                              categories[selectedIndex])
+                                          .toList();
+                                    }
+                                  });
+                                }
+                              },
                             );
                           },
+                          separatorBuilder: (context, index) {
+                            return Divider();
+                          },
                         );
-                      },
-                      separatorBuilder: (context, index) {
-                        return const Divider();
                       },
                     ),
                   ),

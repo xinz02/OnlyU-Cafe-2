@@ -10,11 +10,8 @@ import 'package:onlyu_cafe/model/menu_item.dart';
 
 class EditMenuItemForm extends StatefulWidget {
   final MenuItem menuItem;
-  final Function(MenuItem) onUpdate;
 
-  const EditMenuItemForm(
-      {Key? key, required this.menuItem, required this.onUpdate})
-      : super(key: key);
+  const EditMenuItemForm({Key? key, required this.menuItem}) : super(key: key);
 
   @override
   _EditMenuItemFormState createState() => _EditMenuItemFormState();
@@ -144,8 +141,7 @@ class _EditMenuItemFormState extends State<EditMenuItemForm> {
           'imageUrl': imageUrl,
         });
 
-        widget.onUpdate(updatedMenuItem);
-        Navigator.pop(context);
+        Navigator.pop(context, updatedMenuItem); // Pass updated menu item back to previous screen
       } catch (e) {
         print('Error updating menu item: $e');
       } finally {
@@ -178,7 +174,7 @@ class _EditMenuItemFormState extends State<EditMenuItemForm> {
                       .doc(widget.menuItem.id)
                       .delete();
                   Navigator.pop(context); // Close confirmation dialog
-                  Navigator.pop(context); // Close edit form
+                  Navigator.pop(context, null); // Pass null back to indicate deletion
                 } catch (e) {
                   print('Error deleting menu item: $e');
                 }

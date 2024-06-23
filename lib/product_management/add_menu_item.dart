@@ -42,7 +42,9 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
       List<String> fetchedCategories =
           snapshot.docs.map((doc) => doc['name'] as String).toList();
       setState(() {
-        _categories.addAll(fetchedCategories);
+        _categories.clear(); // Clear existing categories
+        _categories.addAll(['Please select category', ...fetchedCategories]); // Add fetched categories
+        _category = _categories.first; // Reset selected category
       });
     } catch (e) {
       print('Error fetching categories: $e');

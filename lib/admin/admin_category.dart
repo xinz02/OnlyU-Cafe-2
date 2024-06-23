@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminCategoryPage extends StatefulWidget {
-  const AdminCategoryPage({super.key});
+  const AdminCategoryPage({Key? key}) : super(key: key);
 
   @override
   _AdminCategoryPageState createState() => _AdminCategoryPageState();
@@ -26,14 +26,16 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
       QuerySnapshot snapshot = await _firestore.collection('Category').get();
       bool exists = snapshot.docs.any((doc) => doc['name'] == name);
       if (exists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: const Text('Category already exists')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Category already exists')));
         return;
       }
 
       int newId = snapshot.size + 1;
-      DocumentReference docRef = _firestore.collection('Category').doc();
-      await docRef.set({'id': newId, 'name': name});
+      await _firestore.collection('Category').add({'id': newId, 'name': name});
+      setState(() {
+        // Update state to reflect the new category
+      });
     } catch (e) {
       print('Error adding category: $e');
     }
@@ -58,6 +60,9 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
       for (var doc in categorySnapshot.docs) {
         await doc.reference.delete();
       }
+      setState(() {
+        // Update state to reflect category deletion
+      });
     } catch (e) {
       print('Error deleting category: $e');
     }
@@ -93,6 +98,9 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
       }
 
       await batch.commit();
+      setState(() {
+        // Update state to reflect category edit
+      });
     } catch (e) {
       print('Error editing category: $e');
     }
