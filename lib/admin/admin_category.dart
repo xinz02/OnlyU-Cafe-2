@@ -10,30 +10,9 @@ class AdminCategoryPage extends StatefulWidget {
 
 class _AdminCategoryPageState extends State<AdminCategoryPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  List<String> categories = [];
-  bool isLoading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    fetchCategories();
-  }
-
-  Future<void> fetchCategories() async {
-    try {
-      QuerySnapshot snapshot =
-          await _firestore.collection('Category').orderBy('id').get();
-      List<String> fetchedCategories =
-          snapshot.docs.map((doc) => doc['name'] as String).toList();
-      setState(() {
-        categories = fetchedCategories;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-    }
+  Stream<QuerySnapshot> getCategoriesStream() {
+    return _firestore.collection('Category').orderBy('id').snapshots();
   }
 
   String formatCategoryName(String name) {
@@ -43,19 +22,18 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
 
   Future<void> addCategory(String name) async {
     name = formatCategoryName(name);
-    bool exists = categories.contains(name);
-    if (exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Category already exists')));
-      return;
-    }
-
     try {
       QuerySnapshot snapshot = await _firestore.collection('Category').get();
+      bool exists = snapshot.docs.any((doc) => doc['name'] == name);
+      if (exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: const Text('Category already exists')));
+        return;
+      }
+
       int newId = snapshot.size + 1;
       DocumentReference docRef = _firestore.collection('Category').doc();
       await docRef.set({'id': newId, 'name': name});
-      fetchCategories(); // Refresh the categories list
     } catch (e) {
       print('Error adding category: $e');
     }
@@ -80,8 +58,6 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
       for (var doc in categorySnapshot.docs) {
         await doc.reference.delete();
       }
-
-      fetchCategories(); // Refresh the categories list
     } catch (e) {
       print('Error deleting category: $e');
     }
@@ -89,20 +65,22 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
 
   Future<void> editCategory(String oldName, String newName) async {
     newName = formatCategoryName(newName);
-    if (categories.contains(newName)) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Category already exists')));
-      return;
-    }
-
     try {
-      QuerySnapshot snapshot = await _firestore
+      QuerySnapshot snapshot = await _firestore.collection('Category').get();
+      bool exists = snapshot.docs.any((doc) => doc['name'] == newName);
+      if (exists) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Category already exists')));
+        return;
+      }
+
+      QuerySnapshot menuItemsSnapshot = await _firestore
           .collection('menu_items')
           .where('category', isEqualTo: oldName)
           .get();
       WriteBatch batch = _firestore.batch();
 
-      for (var doc in snapshot.docs) {
+      for (var doc in menuItemsSnapshot.docs) {
         batch.update(doc.reference, {'category': newName});
       }
 
@@ -115,7 +93,6 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
       }
 
       await batch.commit();
-      fetchCategories(); // Refresh the categories list
     } catch (e) {
       print('Error editing category: $e');
     }
@@ -225,32 +202,46 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
           ),
         ],
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: EdgeInsets.all(20),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                String categoryName = categories[index];
-                return ListTile(
-                  title: Text(categoryName),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () => _showEditCategoryDialog(categoryName),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () =>
-                            _showDeleteConfirmationDialog(categoryName),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: getCategoriesStream(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          List<String> categories = snapshot.data!.docs
+              .map((doc) => doc['name'] as String)
+              .toList();
+
+          return ListView.builder(
+            padding: EdgeInsets.all(20),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              String categoryName = categories[index];
+              return ListTile(
+                title: Text(categoryName),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () => _showEditCategoryDialog(categoryName),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () =>
+                          _showDeleteConfirmationDialog(categoryName),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

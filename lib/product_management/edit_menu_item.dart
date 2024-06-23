@@ -172,13 +172,16 @@ class _EditMenuItemFormState extends State<EditMenuItemForm> {
             ),
             TextButton(
               onPressed: () async {
-                await FirebaseFirestore.instance
-                    .collection('menu_items')
-                    .doc(widget.menuItem.id)
-                    .delete();
-
-                Navigator.pop(context);
-                Navigator.pop(context);
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('menu_items')
+                      .doc(widget.menuItem.id)
+                      .delete();
+                  Navigator.pop(context); // Close confirmation dialog
+                  Navigator.pop(context); // Close edit form
+                } catch (e) {
+                  print('Error deleting menu item: $e');
+                }
               },
               child: const Text(
                 "Delete",
@@ -299,9 +302,7 @@ class _EditMenuItemFormState extends State<EditMenuItemForm> {
                             ),
                           ],
                         ),
-                        SizedBox(
-                          height: 15,
-                        ),
+                        const SizedBox(height: 15),
                         if (_imageFile != null)
                           Image.file(
                             _imageFile!,
